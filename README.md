@@ -1,50 +1,51 @@
-# src/recommender.py
+# Movie NLP Recommender (TF-IDF + Cosine Similarity)
 
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import linear_kernel
+This project is a simple **content-based movie recommendation system** built using
+classic NLP techniques. Given a movie title, it recommends similar movies based
+on their **title and genres**.
 
+The goal of this repo is to demonstrate a clean, end-to-end NLP workflow that
+can be easily understood, extended, and used as a portfolio project.
 
-class MovieRecommender:
-    def __init__(self, movies_csv_path: str):
-        self.movies_df = pd.read_csv(movies_csv_path)
-        self._prepare_data()
-        self._build_model()
+---
 
-    def _prepare_data(self):
-        self.movies_df = self.movies_df.copy().reset_index(drop=True)
-        self.movies_df['title'] = self.movies_df['title'].fillna('')
-        self.movies_df['genres'] = self.movies_df['genres'].fillna('')
-        self.movies_df['genres_clean'] = self.movies_df['genres'].str.replace('|', ' ', regex=False)
-        self.movies_df['combined'] = self.movies_df['title'] + " " + self.movies_df['genres_clean']
+## How It Works
 
-    def _build_model(self):
-        self.tfidf = TfidfVectorizer(stop_words='english')
-        self.tfidf_matrix = self.tfidf.fit_transform(self.movies_df['combined'])
-        self.cosine_sim = linear_kernel(self.tfidf_matrix, self.tfidf_matrix)
-        self.title_to_index = pd.Series(
-            self.movies_df.index,
-            index=self.movies_df['title'].str.lower()
-        )
+1. **Data**  
+   Uses the open-source [MovieLens](https://grouplens.org/datasets/movielens/)
+   dataset (`movies.csv` from the `ml-latest-small` release).
 
-    def get_recommendations(self, title: str, n: int = 10) -> pd.DataFrame | None:
-        title_lower = title.lower()
-        if title_lower not in self.title_to_index:
-            matches = self.movies_df[self.movies_df['title'].str.lower().str.contains(title_lower)]
-            print(f"Title '{title}' not found as exact match.")
-            if not matches.empty:
-                print("Did you mean one of these?")
-                print(matches['title'].head(10).to_string(index=False))
-            return None
+2. **Text Features**  
+   For each movie, we create a simple text field by combining:
+   - movie title
+   - genres (e.g., "Animation Children Comedy")
 
-        idx = self.title_to_index[title_lower]
-        sim_scores = list(enumerate(self.cosine_sim[idx]))
-        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-        sim_scores = sim_scores[1:n+1]
+3. **Vectorization (NLP)**  
+   We use `TfidfVectorizer` from `scikit-learn` to convert the text into
+   numerical vectors (TF-IDF). Each movie becomes a vector in a high-dimensional
+   space where important words (for that movie) get higher weights.
 
-        movie_indices = [i[0] for i in sim_scores]
-        scores = [i[1] for i in sim_scores]
+4. **Similarity**  
+   We compute **cosine similarity** between all movie vectors. Two movies are
+   considered "similar" if their TF-IDF vectors point in a similar direction.
 
-        results = self.movies_df.iloc[movie_indices][['title', 'genres']].copy()
-        results['similarity'] = scores
-        return results
+5. **Recommendation**  
+   Given a movie title, we:
+   - find its index in the dataset  
+   - look up its similarity scores with all other movies  
+   - sort by similarity and return the top *N* most similar titles
+
+---
+
+## Project Structure
+
+```text
+movie-nlp-recommender/
+├── notebooks/
+│   └── movie_nlp_recommender.ipynb   # Colab / Jupyter notebook
+├── src/
+│   └── recommender.py                # (optional) Python class for reuse
+├── data/
+│   └── movies.csv                    # not tracked in git (see below)
+├── requirements.txt
+└── README.md
