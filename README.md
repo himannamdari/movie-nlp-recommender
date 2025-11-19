@@ -25,7 +25,7 @@ can be easily understood, extended, and used as a portfolio project.
    numerical vectors (TF-IDF). Each movie becomes a vector in a high-dimensional
    space where important words (for that movie) get higher weights.
 
-4. **Similarity**  
+4. **Similarity**  See: https://medium.com/@arjunprakash027/understanding-cosine-similarity-a-key-concept-in-data-science-72a0fcc57599
    We compute **cosine similarity** between all movie vectors. Two movies are
    considered "similar" if their TF-IDF vectors point in a similar direction.
 
